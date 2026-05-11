@@ -1,12 +1,14 @@
 /**
- * منطق لوحة التحكم
- * يحتوي على وظائف التنبيهات، القائمة الجانبية، وجلب البيانات من الـ API
+ * ملف منطق لوحة التحكم (Dashboard Logic)
+ * =====================================
+ * هذا الملف مسؤول عن كافة التفاعلات الديناميكية في لوحة تحكم المستخدم.
+ * يتضمن ذلك: التحكم في القائمة الجانبية، الإشعارات، الرسائل المنبثقة، والاتصال مع الـ API.
  */
 
 // ── وظائف مساعدة (Utility Functions) ──
 
 /**
- * إظهار رسالة تنبيه منبثقة
+ * وظيفة (showToast): لإظهار رسائل تنبيهية منبثقة للمستخدم (نجاح، خطأ، تنبيه).
  */
 function showToast(message, type = 'success') {
     const container = document.getElementById('toastContainer');
@@ -17,6 +19,7 @@ function showToast(message, type = 'success') {
     toast.innerHTML = message;
     container.appendChild(toast);
     
+    // إخفاء الرسالة تلقائياً بعد 3 ثوانٍ
     setTimeout(() => { 
         toast.style.opacity = '0'; 
         toast.style.transform = 'translateY(-10px)'; 
@@ -25,7 +28,8 @@ function showToast(message, type = 'success') {
 }
 
 /**
- * طلب بيانات من الـ API (POST)
+ * وظيفة (apiCall): وسيط لإرسال البيانات إلى ملف الـ PHP API باستخدام تقنية Fetch.
+ * تستخدم في عمليات (الإرسال والتعديل والحذف).
  */
 function apiCall(action, data = {}, method = 'POST') {
     const fd = new FormData();
@@ -35,14 +39,14 @@ function apiCall(action, data = {}, method = 'POST') {
 }
 
 /**
- * طلب بيانات من الـ API (GET)
+ * وظيفة (apiGet): لطلب البيانات من الـ API (عمليات الجلب فقط).
  */
 function apiGet(action, params = '') {
     return fetch(`api/api.php?action=${action}${params}`).then(r => r.json());
 }
 
 /**
- * نافذة تأكيد الإجراء
+ * وظيفة (confirmDialog): نافذة تأكيد مخصصة قبل تنفيذ إجراءات حساسة مثل الحذف.
  */
 function confirmDialog(message) {
     return new Promise(resolve => {
@@ -66,7 +70,7 @@ function confirmDialog(message) {
     });
 }
 
-// ── التحكم في القائمة الجانبية (Sidebar) ──
+// ── التحكم في العناصر بعد تحميل الصفحة ──
 
 document.addEventListener('DOMContentLoaded', () => {
     const sidebar = document.getElementById('sidebar');
@@ -76,6 +80,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const sidebarTexts = document.querySelectorAll('.sidebar-text');
     let isOpen = true;
 
+    // طي وتوسيع القائمة الجانبية (Sidebar Collapse)
     if (sidebarToggle) {
         sidebarToggle.addEventListener('click', () => {
             isOpen = !isOpen;
@@ -97,7 +102,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // ── البحث العام ──
+    // ── نظام البحث السريع ──
     let searchTimeout;
     const searchInput = document.getElementById('globalSearch');
     if (searchInput) {
@@ -106,6 +111,7 @@ document.addEventListener('DOMContentLoaded', () => {
             searchTimeout = setTimeout(() => {
                 const q = e.target.value.trim();
                 if (q.length < 2) return;
+                // إرسال طلب بحث للـ API
                 apiGet('search', `&q=${encodeURIComponent(q)}`).then(res => {
                     if (res.success && res.data.length > 0) {
                         showToast(`تم العثور على ${res.data.length} نتيجة`, 'info');
@@ -116,7 +122,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-// ── إخفاء القوائم عند النقر خارجها ──
+// ── إغلاق القوائم عند النقر خارجها ──
 document.addEventListener('click', (e) => {
     const notifPanel = document.getElementById('notifPanel');
     if (notifPanel && !e.target.closest('#notifPanel') && !e.target.closest('[onclick*="toggleNotifPanel"]')) {
@@ -124,15 +130,11 @@ document.addEventListener('click', (e) => {
     }
 });
 
-// ── التنبيهات (Notifications) ──
+// ── نظام الإشعارات (Notifications System) ──
 
-function toggleMobileSidebar() {
-    const sidebar = document.getElementById('sidebar');
-    if(sidebar) sidebar.classList.toggle('mobile-open');
-    const overlay = document.getElementById('mobileOverlay');
-    if(overlay) overlay.classList.toggle('hidden');
-}
-
+/**
+ * فتح وإغلاق لوحة الإشعارات
+ */
 function toggleNotifPanel() {
     const panel = document.getElementById('notifPanel');
     if(panel) {
@@ -141,6 +143,9 @@ function toggleNotifPanel() {
     }
 }
 
+/**
+ * جلب الإشعارات من قاعدة البيانات وعرضها في القائمة
+ */
 function loadNotifications() {
     apiGet('get_notifications').then(res => {
         if (!res.success) return;
@@ -148,7 +153,7 @@ function loadNotifications() {
         if (!list) return;
         
         if (res.data.length === 0) {
-            list.innerHTML = '<div class="p-6 text-center text-gray-400 text-sm">لا توجد إشعارات</div>';
+            list.innerHTML = '<div class="p-6 text-center text-gray-400 text-sm">لا توجد إشعارات حالية</div>';
             return;
         }
         
@@ -168,6 +173,9 @@ function loadNotifications() {
     });
 }
 
+/**
+ * وضع علامة "مقروء" على إشعار معين
+ */
 function readNotif(id) {
     apiCall('read_notification', { notif_id: id }).then(() => {
         const badge = document.getElementById('notifBadge');
