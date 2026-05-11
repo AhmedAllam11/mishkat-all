@@ -1,16 +1,28 @@
 <?php
-require_once 'db.php';
+/**
+ * ملف تحديث بنية قاعدة البيانات (update_db.php)
+ * يستخدم لإضافة أعمدة جديدة لجدول معلومات المعلمين دون حذف البيانات القديمة
+ */
+require_once __DIR__ . '/../includes/db.php';
 
-// Add columns to teachers_info
+// إضافة أعمدة الموقع ورابط السيرة الذاتية لجدول المعلمين
 $sql1 = "ALTER TABLE teachers_info ADD COLUMN location VARCHAR(255) AFTER rating";
 $sql2 = "ALTER TABLE teachers_info ADD COLUMN cv_url VARCHAR(500) AFTER location";
 
-if ($conn->query($sql1)) echo "Column 'location' added.<br>";
-else echo "Error adding 'location' (maybe it exists): " . $conn->error . "<br>";
+// تنفيذ الاستعلام الأول (إضافة الموقع)
+if ($conn->query($sql1)) {
+    echo "تم إضافة عمود الموقع بنجاح.<br>";
+} else {
+    echo "ملاحظة: عمود الموقع قد يكون موجوداً بالفعل.<br>";
+}
 
-if ($conn->query($sql2)) echo "Column 'cv_url' added.<br>";
-else echo "Error adding 'cv_url' (maybe it exists): " . $conn->error . "<br>";
+// تنفيذ الاستعلام الثاني (إضافة رابط السيرة الذاتية)
+if ($conn->query($sql2)) {
+    echo "تم إضافة عمود السيرة الذاتية بنجاح.<br>";
+} else {
+    echo "ملاحظة: عمود السيرة الذاتية قد يكون موجوداً بالفعل.<br>";
+}
 
-echo "<h2>Database Schema Updated Successfully!</h2>";
-echo "<p><a href='index.php'>Return to Home</a></p>";
+echo "<h2>✅ تم تحديث هيكل قاعدة البيانات بنجاح!</h2>";
+echo "<p><a href='../index.php'>العودة للرئيسية</a></p>";
 ?>

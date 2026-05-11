@@ -1,13 +1,19 @@
 <?php
+/**
+ * ملف إصلاح وتغذية البيانات (db_fix.php)
+ * يستخدم هذا الملف لإعادة تعبئة المكتبة الإسلامية والمهام وتحديث بنية بعض الجداول
+ */
 session_start();
-require_once 'db.php';
+// التأكد من المسار الصحيح لملف الاتصال بقاعدة البيانات
+require_once __DIR__ . '/../includes/db.php';
 
 echo "<div style='font-family: sans-serif; padding: 20px; direction: rtl;'>";
 echo "<h2 style='color: #065f46;'>تغذية المكتبة الإسلامية والمهام...</h2>";
 
+// تعطيل فحص المفاتيح الخارجية للسماح بعمليات الحذف والإضافة الجماعية
 $conn->query("SET FOREIGN_KEY_CHECKS = 0");
 
-// 1. Refresh Library Items
+// 1. تحديث عناصر المكتبة الإسلامية
 $conn->query("DELETE FROM library_items");
 $lib_items = [
     ['شرح الأربعون النووية', 'أحاديث', 'pdf', 'شرح ميسر لأحاديث المصطفى صلى الله عليه وسلم.'],
@@ -26,7 +32,7 @@ foreach ($lib_items as $li) {
     $stmt->execute();
 }
 
-// 2. Refresh Tasks
+// 2. تحديث المهام والواجبات اليومية للطلاب
 $conn->query("DELETE FROM user_tasks");
 $conn->query("DELETE FROM tasks");
 
@@ -40,6 +46,7 @@ $tasks = [
     ['تدريب على مخارج الحلق', 'تطبيق عملي لمخارج الهمزة والهاء والعين والحاء.', 'audio', 'بعد يومين', 'اعتيادي']
 ];
 
+// إنشاء بعض الجداول الضرورية إذا لم تكن موجودة
 $tables = [
     "exam_results" => "CREATE TABLE IF NOT EXISTS exam_results (
         id INT AUTO_INCREMENT PRIMARY KEY,
@@ -73,13 +80,19 @@ $tables = [
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
 ];
 
+// تنفيذ استعلامات إنشاء الجداول
+foreach ($tables as $name => $sql) {
+    $conn->query($sql);
+}
+
+// إدراج المهام الجديدة وتعيينها لكافة الطلاب
 foreach ($tasks as $t) {
     $stmt = $conn->prepare("INSERT INTO tasks (title, description, type, deadline, status) VALUES (?, ?, ?, ?, ?)");
     $stmt->bind_param("sssss", $t[0], $t[1], $t[2], $t[3], $t[4]);
     $stmt->execute();
     $tid = $stmt->insert_id;
     
-    // Assign to all students
+    // جلب كافة الطلاب لتعيين المهمة لهم
     $students = $conn->query("SELECT id FROM users WHERE role='student'");
     while($st = $students->fetch_assoc()) {
         $sid = $st['id'];
@@ -87,6 +100,7 @@ foreach ($tasks as $t) {
     }
 }
 
+// إعادة تفعيل فحص المفاتيح الخارجية
 $conn->query("SET FOREIGN_KEY_CHECKS = 1");
 
 echo "<h3>✅ تمت التغذية بنجاح!</h3>";

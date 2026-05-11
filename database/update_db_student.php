@@ -1,17 +1,24 @@
 <?php
-require_once 'db.php';
+/**
+ * ملف تحديث بيانات الطلاب (update_db_student.php)
+ * يستخدم لإضافة عمود العمر لجدول المستخدمين وإنشاء مجلدات الرفع الضرورية
+ */
+require_once __DIR__ . '/../includes/db.php';
 
-// Add age column to users
+// إضافة عمود العمر لجدول المستخدمين (users)
 $sql = "ALTER TABLE users ADD COLUMN age INT AFTER gender";
-if ($conn->query($sql)) echo "Column 'age' added to users table.<br>";
-else echo "Age column already exists or error: " . $conn->error . "<br>";
-
-// Create uploads directory
-if (!file_exists('uploads/cvs')) {
-    mkdir('uploads/cvs', 0777, true);
-    echo "Directory 'uploads/cvs' created.<br>";
+if ($conn->query($sql)) {
+    echo "تم إضافة عمود العمر لجدول المستخدمين بنجاح.<br>";
+} else {
+    echo "ملاحظة: عمود العمر قد يكون موجوداً بالفعل.<br>";
 }
 
-echo "<h2>Database and Filesystem Updated!</h2>";
-echo "<p><a href='index.php'>Return to Home</a></p>";
+// إنشاء مجلدات الرفع (uploads) إذا لم تكن موجودة
+if (!file_exists('../uploads/cvs')) {
+    mkdir('../uploads/cvs', 0777, true);
+    echo "تم إنشاء مجلد 'uploads/cvs' بنجاح.<br>";
+}
+
+echo "<h2>✅ تم تحديث قاعدة البيانات ونظام الملفات!</h2>";
+echo "<p><a href='../index.php'>العودة للرئيسية</a></p>";
 ?>
